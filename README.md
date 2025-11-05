@@ -1,4 +1,5 @@
-git config--globa.name" tcducas"
-git-config -- global user.email"thacanducas@icloud.com"
-mkdir my-project-git
-cd my-project-git
+def saudar(nome):
+    print(f"Olá, {tcducas }! ")
+
+if __name__ == "__main__":
+    saudar("Seu Nome")
