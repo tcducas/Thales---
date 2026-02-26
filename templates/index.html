@@ -2,58 +2,112 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu E-commerce</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .chat-window { display: none; }
-        .chat-active { display: flex; }
+        /* Estilo para esconder o chat inicialmente */
+        .chat-hidden { display: none !important; }
+        #chat-content::-webkit-scrollbar { width: 4px; }
+        #chat-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-gray-100 h-screen">
-    <div class="p-10">
-        <h1 class="text-4xl font-bold">Navegue na Loja ENIAC</h1>
-        <p class="mt-4 text-gray-600">Explore nossos produtos usados e obsoletos.</p>
-    </div>
+<body class="bg-gray-100 font-sans">
 
-    <div class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-        <div id="chat-win" class="chat-window w-80 h-[450px] bg-white shadow-2xl rounded-2xl border flex-col mb-4">
-            <div class="bg-blue-600 p-4 text-white rounded-t-2xl flex justify-between">
-                <span>Suporte ENIAC</span>
-                <button onclick="toggleChat()"><i class="fas fa-times"></i></button>
+    <nav class="bg-white shadow p-4 mb-8">
+        <h1 class="text-xl font-bold text-blue-600">Minha Loja Virtual</h1>
+    </nav>
+    <main class="max-w-4xl mx-auto p-4 text-gray-600">
+        <h2 class="text-3xl font-bold mb-4">Bem-vindo à nossa loja!</h2>
+        <p>Você pode navegar por aqui, ver produtos e o chat continuará disponível no canto.</p>
+        <div class="grid grid-cols-2 gap-4 mt-8">
+            <div class="h-40 bg-white rounded shadow p-4 italic">Produto A - R$ 99,00</div>
+            <div class="h-40 bg-white rounded shadow p-4 italic">Produto B - R$ 149,00</div>
+        </div>
+    </main>
+
+    <div id="chat-wrapper" class="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        
+        <div id="chat-window" class="chat-hidden w-80 sm:w-96 h-[500px] bg-white shadow-2xl rounded-2xl border border-gray-200 flex flex-col mb-4 transition-all duration-300 transform">
+            <div class="bg-blue-600 p-4 text-white rounded-t-2xl flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-robot"></i>
+                    <span class="font-semibold text-sm">Suporte Inteligente</span>
+                </div>
+                <button onclick="toggleChat()" class="hover:text-gray-200"><i class="fas fa-minus"></i></button>
             </div>
-            <div id="box" class="flex-1 p-4 overflow-y-auto text-sm space-y-2 bg-gray-50"></div>
-            <form id="f" class="p-2 border-t flex">
-                <input type="text" id="i" class="flex-1 border rounded-full px-3 py-1 outline-none">
-                <button class="ml-2 text-blue-600"><i class="fas fa-paper-plane"></i></button>
+
+            <div id="chat-content" class="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50 text-sm">
+                <div class="bg-white p-3 rounded-lg shadow-sm border border-gray-100 max-w-[85%]">
+                    Olá! 👋 Como posso ajudar na sua compra hoje?
+                </div>
+            </div>
+
+            <form id="chat-form" class="p-3 border-t flex gap-2">
+                <input type="text" id="user-input" placeholder="Pergunte algo..." class="flex-1 border rounded-full px-4 py-2 text-sm outline-none focus:border-blue-500">
+                <button type="submit" class="bg-blue-600 text-white w-9 h-9 rounded-full flex items-center justify-center hover:bg-blue-700">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
             </form>
         </div>
-        <button onclick="toggleChat()" class="bg-blue-600 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl">
-            <i class="fas fa-comment-dots"></i>
+
+        <button onclick="toggleChat()" class="bg-blue-600 hover:bg-blue-700 text-white w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95">
+            <i id="chat-icon" class="fas fa-comments text-2xl"></i>
         </button>
     </div>
 
     <script>
-        function toggleChat() { document.getElementById('chat-win').classList.toggle('chat-active'); }
-        
-        document.getElementById('f').onsubmit = async (e) => {
-            e.preventDefault();
-            const input = document.getElementById('i');
-            const box = document.getElementById('box');
-            const msg = input.value;
-            if(!msg) return;
+        // Função para abrir/fechar o chat
+        function toggleChat() {
+            const window = document.getElementById('chat-window');
+            const icon = document.getElementById('chat-icon');
+            window.classList.toggle('chat-hidden');
+            
+            // Troca o ícone de balão por um de fechar
+            if(window.classList.contains('chat-hidden')) {
+                icon.className = "fas fa-comments text-2xl";
+            } else {
+                icon.className = "fas fa-chevron-down text-2xl";
+            }
+        }
 
-            box.innerHTML += `<div class="text-right"><b>Você:</b> ${msg}</div>`;
+        const form = document.getElementById('chat-form');
+        const input = document.getElementById('user-input');
+        const content = document.getElementById('chat-content');
+
+        function addMessage(text, isUser = false) {
+            const div = document.createElement('div');
+            div.className = `flex ${isUser ? 'justify-end' : 'justify-start'}`;
+            div.innerHTML = `
+                <div class="${isUser ? 'bg-blue-600 text-white' : 'bg-white border text-gray-800'} p-3 rounded-2xl max-w-[85%] shadow-sm">
+                    ${text}
+                </div>
+            `;
+            content.appendChild(div);
+            content.scrollTop = content.scrollHeight;
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            addMessage(msg, true);
             input.value = '';
 
-            const res = await fetch('/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({message: msg})
-            });
-            const data = await res.json();
-            box.innerHTML += `<div class="text-left bg-blue-100 p-2 rounded"><b>IA:</b> ${data.response}</div>`;
-            box.scrollTop = box.scrollHeight;
-        };
+            try {
+                const res = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: msg })
+                });
+                const data = await res.json();
+                addMessage(data.response);
+            } catch (err) {
+                addMessage("Erro ao conectar. Tente novamente.");
+            }
+        });
     </script>
 </body>
 </html>
