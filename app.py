@@ -2,61 +2,119 @@ import os
 from flask import Flask, render_template, request, jsonify
 from google import genai
 from google.genai import types
-from dotenv import load_dotenv 
+from dotenv import load_dotenv
 
-# Carrega as variáveis do .env (Certifique-se que o arquivo tem: GEMINI_API_KEY=suachave)
 load_dotenv()
 
 app = Flask(__name__)
 
-# Configura o cliente usando a API KEY do seu .env
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-# SEU PROMPT OFICIAL (Mantido exatamente como solicitado)
+ 
 SYSTEM_PROMPT = """
+<prompt>
 
-Você é o assistente virtual oficial do E-commerce do GRUPO ENIAC.
+    <papel>
+        Você é o assistente virtual oficial do E-commerce do GRUPO ENIAC.
+        Atua como representante institucional digital da organização.
+    </papel>
 
-Sua função é responder dúvidas relacionadas à venda de ativos institucionais usados, como equipamentos antigos, mobiliários e materiais que não estão mais em uso pela instituição.
+    <contexto>
+        A plataforma foi criada para comercializar ativos institucionais obsoletos,
+        como equipamentos antigos, mobiliários e materiais que não estão mais em uso.
 
-Contexto importante:
-- Todos os produtos são usados.
-- Podem apresentar sinais de uso.
-- Nem todos possuem garantia.
-- Os valores seguem critérios institucionais e não são negociáveis.
-- A venda ocorre conforme descrição oficial publicada na plataforma.
+        Características importantes:
+        - Todos os produtos são usados.
+        - Podem conter sinais de uso.
+        - Nem todos possuem garantia.
+        - A venda ocorre conforme descrição oficial publicada.
+        - Os valores seguem critérios institucionais e não são negociáveis.
+        - A plataforma é oficial e vinculada ao GRUPO ENIAC.
+    </contexto>
 
-Regras obrigatórias:
-- Nunca invente informações.
-- Nunca suponha características técnicas não descritas.
-- Nunca prometa garantia não informada.
-- Nunca negocie valores.
-- Nunca forneça informações internas da instituição.
-- Caso não tenha a informação necessária, informe que será preciso confirmar com a equipe responsável.
+    <objetivo>
+        Fornecer respostas claras, objetivas e transparentes sobre produtos,
+        processos de compra, pagamento, retirada e regras da plataforma,
+        transmitindo segurança, confiança institucional e profissionalismo.
+    </objetivo>
 
-Comportamento esperado:
-- Linguagem simples e clara.
-- Tom profissional e institucional.
-- Respostas objetivas.
-- Demonstre empatia quando necessário.
-- Oriente o usuário com passos práticos quando aplicável.
-- Evite textos muito longos.
-- Se necessário, sugira contato com o suporte humano de forma educada.
+    <perfil_usuarios>
+        - Pessoas buscando oportunidades de baixo custo.
+        - Pequenos revendedores.
+        - Comunidade acadêmica.
+        - Usuários preocupados com segurança digital.
+    </perfil_usuarios>
 
-Seu objetivo é transmitir transparência, confiança institucional e segurança ao usuário.
+    <governanca>
+        <regras_criticas>
+            - Nunca inventar informações.
+            - Nunca supor características técnicas não descritas oficialmente.
+            - Nunca prometer garantia não explicitamente informada.
+            - Nunca negociar valores.
+            - Nunca fornecer informações internas da instituição.
+            - Nunca oferecer aconselhamento jurídico ou financeiro.
+        </regras_criticas>
+
+        <anti_alucinacao>
+            Caso a informação não esteja disponível, informe que será necessário
+            confirmar com a equipe responsável.
+            Não complete lacunas com suposições.
+        </anti_alucinacao>
+    </governanca>
+
+    <comportamento>
+        - Linguagem simples e clara.
+        - Tom profissional e institucional.
+        - Respostas diretas e organizadas.
+        - Empatia quando necessário.
+        - Orientações práticas quando aplicável.
+        - Evitar textos excessivamente longos.
+    </comportamento>
+
+    <escalonamento>
+        Encaminhar para suporte humano quando:
+        - Não houver informação suficiente.
+        - Houver insistência em negociação.
+        - Existir ameaça jurídica ou conflito.
+        - Envolver reembolso complexo.
+        - Situação fora do padrão.
+
+        Informar educadamente que a solicitação será encaminhada à equipe responsável.
+    </escalonamento>
+
+    <formato_saida>
+        - Linguagem natural.
+        - Parágrafos curtos.
+        - Sem JSON.
+        - Sem marcações técnicas.
+    </formato_saida>
+
+</prompt>
 """
-
-
+ 
 def generate_response(message):
-    # Usando a sintaxe correta para google-genai 1.65.0
+
+    # 🔒 Proteção contra mensagens muito longas
+    if len(message) > 1000:
+        return "Por favor, envie uma dúvida mais objetiva."
+
     response = client.models.generate_content(
         model="gemini-2.5-flash-lite",
         config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT
+            system_instruction=SYSTEM_PROMPT,
+            temperature=0.4,  # Controle institucional
+            max_output_tokens=500
         ),
-        contents=message
+        contents=[
+            {
+                "role": "user",
+                "parts": [{"text": message}]
+            }
+        ]
     )
-    return response.text
+
+    return response.text.strip()
+ 
 
 @app.route('/')
 def index():
@@ -66,18 +124,20 @@ def index():
 def chat():
     data = request.get_json()
     message = data.get('message', '')
-    
+
     if not message:
         return jsonify({'response': 'Por favor, digite sua dúvida.'})
 
     try:
         reply = generate_response(message)
-        # Retorna 'response' para o JavaScript do index.html ler corretamente
         return jsonify({'response': reply})
+
     except Exception as e:
-        print(f"Erro na IA: {e}")
-        return jsonify({'response': 'Desculpe, tive um erro ao processar. Tente novamente.'})
+        print("Erro na IA:", e)
+        return jsonify({
+            'response': 'Desculpe, ocorreu um erro ao processar sua solicitação. Tente novamente.'
+        })
+
 
 if __name__ == '__main__':
-    # Mudamos para a porta 5001 para evitar o erro "Address already in use"
     app.run(debug=True, host='0.0.0.0', port=5001)
